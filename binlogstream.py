@@ -3,6 +3,7 @@ from pymysqlreplication import row_event
 import configparser
 import pymysqlreplication
 import csv, boto3
+import pymysql
 
 # MySQL 연결 정보 가져옴
 parser = configparser.ConfigParser()
@@ -11,6 +12,7 @@ hostname = parser.get('mysql_config', 'hostname')
 port = parser.get('mysql_config', 'port')
 username = parser.get('mysql_config', 'username')
 password = parser.get('mysql_config', 'password')
+database = parser.get('mysql_config', 'database')
 
 mysql_settings = {
     "host" : hostname,
@@ -19,20 +21,31 @@ mysql_settings = {
     "passwd" : password
 }
 
+# #쿼리 날리기
+# conn = pymysql.connect(host = hostname, user=username, passwd = password,
+#                     db=database, port=int(port), use_unicode=True,charset ='utf8',
+#                     cursorclass=pymysql.cursors.DictCursor)
+# cursor = conn.cursor()
+# query = """INSERT INTO Orders
+# 	      Values(5, 'Shipped', '2022-09-22 09:20:00');"""
+
+# cursor.execute(query)
+# conn.commit()
+# conn.close()
+
 b_stream = BinLogStreamReader(
     connection_settings = mysql_settings,
-    server_id=100,
+    server_id=1383646513,
     only_events=[row_event.DeleteRowsEvent,
                  row_event.WriteRowsEvent,
-                 row_event.UpdateRowsEvent],
-    resume_stream=True
+                 row_event.UpdateRowsEvent]    
 )
-
 order_events = []
 
 for binlogevent in b_stream:
+  print("binlog", binlogevent)
   for row in binlogevent.rows:
-    if binlogevent.table == 'orders':
+    if binlogevent.table == 'Orders':
       event = {}
       if isinstance(
             binlogevent,row_event.DeleteRowsEvent
@@ -43,15 +56,16 @@ for binlogevent in b_stream:
             binlogevent,row_event.UpdateRowsEvent
         ):
         event["action"] = "update"
+        print(row)
         event.update(row["after_values"].items())
       elif isinstance(
             binlogevent,row_event.WriteRowsEvent
         ):
         event["action"] = "insert"
         event.update(row["values"].items())
-
+        print(row)
+      print(event)
       order_events.append(event)
-
 
 b_stream.close()
 
