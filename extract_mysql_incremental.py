@@ -7,11 +7,11 @@ import psycopg2
 # get db Redshift connection info
 parser = configparser.ConfigParser()
 parser.read("pipeline.conf")
-dbname = parser.get("aws_boto_credentials", "dbname")
-user = parser.get("aws_boto_credentials", "username")
-password = parser.get("aws_boto_credentials", "password")
-host = parser.get("aws_boto_credentials", "hostname")
-port = parser.get("aws_boto_credentials", "port")
+dbname = parser.get("aws_creds", "database")
+user = parser.get("aws_creds", "username")
+password = parser.get("aws_creds", "password")
+host = parser.get("aws_creds", "host")
+port = parser.get("aws_creds", "port")
 
 # connect to the redshift cluster
 rs_conn = psycopg2.connect(
@@ -29,7 +29,7 @@ result = rs_cursor.fetchone()
 
 # there's only one row and column returned
 last_updated_warehouse = result[0]
-
+print(last_updated_warehouse)
 rs_cursor.close()
 rs_conn.commit()
 
